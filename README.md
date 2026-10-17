@@ -6,7 +6,8 @@ the handwriting, marks every answer against the question paper (and an answer ke
 one), writes feedback for the student, and shows the result as a checked answer sheet in red pen.
 The teacher reviews, corrects and approves the marks before anything is released.
 
-Live demo: https://red-pen.onrender.com
+Live demo: https://red-pen.onrender.com — runs on pre-marked sample scripts (no API keys on the
+server, so it doesn't mark new uploads). Run it locally with your own keys for real marking.
 
 Built for the Sarvam AI buildathon, with a focus on Indian classrooms: handwriting can be read in
 English and 10 Indian languages, feedback can be written in any of them, and narration reads it
