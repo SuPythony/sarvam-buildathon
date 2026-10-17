@@ -1,5 +1,6 @@
 # Render Blueprint: New > Blueprint > pick this repo. Free plan sleeps after 15 min idle and
 # has no persistent disk, so download marks (CSV) after reviewing a batch.
+# Add an APP_PASSWORD env var in the dashboard to require a staff sign-in.
 services:
   - type: web
     name: red-pen
@@ -12,8 +13,6 @@ services:
       - key: SARVAM_API_KEY
         sync: false
       - key: OPENROUTER_API_KEY
-        sync: false
-      - key: APP_PASSWORD
         sync: false
       - key: OPENROUTER_MODEL
         value: deepseek/deepseek-v4.1-flash

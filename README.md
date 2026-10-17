@@ -29,7 +29,7 @@ and final marks side by side. Batches and reviews are saved under `data/` and su
 ## Deploy
 
 **Render (free):** New > Blueprint > this repo. It reads `render.yaml` and asks for
-`SARVAM_API_KEY`, `OPENROUTER_API_KEY` and `APP_PASSWORD`. The free plan sleeps after 15 min idle
+`SARVAM_API_KEY` and `OPENROUTER_API_KEY`; add `APP_PASSWORD` to require a staff sign-in. The free plan sleeps after 15 min idle
 and keeps no disk, so download the CSV after reviewing.
 
 **Railway / any Docker host:** 
