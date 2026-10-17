@@ -114,8 +114,15 @@ def grade(questions_text: str, answers_text: str, answer_key: str | None = None,
     if r.status_code == 400 and "response_format" in r.text:
         body.pop("response_format")  # model lacks JSON mode; the prompt still asks for JSON
         r = _chat(key, body)
+    if r.status_code == 402:
+        raise GraderError(f"OpenRouter credits are too low for {model}. Add credits at "
+                          "https://openrouter.ai/settings/credits or pick a cheaper model.")
     if not r.ok:
-        raise GraderError(f"openrouter {r.status_code}: {r.text}")
+        try:
+            msg = r.json()["error"]["message"]
+        except Exception:
+            msg = r.text[:500]
+        raise GraderError(f"OpenRouter {r.status_code} ({model}): {msg}")
     data = r.json()
     if "choices" not in data:
         raise GraderError(f"openrouter: {data.get('error', data)}")
