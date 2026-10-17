@@ -19,6 +19,13 @@ Batch from the command line:
 python cli.py --questions qp.pdf --submissions scans/ [--key answers.txt] [--effort high] [--feedback-language hi-IN]
 ```
 
+## Teacher review
+
+Each marked script has three views: the marked sheet, the student's writing as Sarvam Vision
+read it, and the original scan. **Review marks** lets the teacher change any mark or remark
+(the AI's mark stays visible beside it), then save a draft or approve. The CSV lists AI marks
+and final marks side by side. Batches and reviews are saved under `data/` and survive restarts.
+
 ## Notes
 
 - Question paper: a PDF's text layer is used if present, otherwise it is OCR'd with Sarvam Vision.

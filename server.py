@@ -1,6 +1,7 @@
-"""Web app: uvicorn server:app --reload  (or: python server.py)"""
+"""Web app: python server.py  →  http://127.0.0.1:8000"""
 import csv
 import io
+import json
 import os
 import threading
 import time
@@ -11,26 +12,54 @@ from pathlib import Path
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 import grader  # noqa: F401  (loads .env)
 from grader.pipeline import grade_submission, question_text
-from grader.sarvam_llm import LANGUAGES
+from grader.sarvam_llm import LANGUAGES, _letter
+from grader.sarvam_ocr import MIME
 from grader.tts import VOICES, narrate
 
 WEB = Path(__file__).parent / "web"
+DATA = Path(os.environ.get("GRADER_DATA", Path(__file__).parent / "data")) / "jobs"
 DEMO = os.environ.get("GRADER_DEMO") == "1"  # fake pipeline for UI work without API keys
 
-app = FastAPI(title="Assignment Grader")
+app = FastAPI(title="Red Pen")
 pool = ThreadPoolExecutor(max_workers=3)
 jobs: dict[str, dict] = {}
 lock = threading.Lock()
+
+
+# ---------- persistence: one folder per batch, job.json + uploaded files ----------
+
+def _save(job_id):
+    """Caller must hold `lock`."""
+    d = DATA / job_id
+    d.mkdir(parents=True, exist_ok=True)
+    tmp = d / "job.json.tmp"
+    tmp.write_text(json.dumps(jobs[job_id], ensure_ascii=False), encoding="utf-8")
+    tmp.replace(d / "job.json")
+
+
+def _load_all():
+    for f in DATA.glob("*/job.json"):
+        job = json.loads(f.read_text(encoding="utf-8"))
+        # A batch interrupted by a restart can't resume its threads.
+        if job["status"] not in ("done", "error"):
+            job["status"] = "error"
+            job["error"] = "Server restarted while marking. Start this batch again."
+        jobs[job["id"]] = job
+
+
+DATA.mkdir(parents=True, exist_ok=True)
+_load_all()
 
 
 def _set(job_id, idx=None, **kw):
     with lock:
         target = jobs[job_id] if idx is None else jobs[job_id]["scripts"][idx]
         target.update(kw)
+        _save(job_id)
 
 
 def _demo_result(name):
@@ -55,7 +84,9 @@ def _demo_result(name):
         "overall_feedback": "Solid grasp of the laws of motion. Work on writing complete definitions.",
         "narration": "You scored fifteen out of twenty. Your numerical answer was perfect. "
                      "Next time, write the full definition of inertia.",
-        "ocr_text": "1. Force is equal to mass times acceleration...\n2. F = ma = 2 x 3 = 6 N\n3. Inertia...",
+        "ocr_text": "Name: Aarav Sharma\n\n1. Force is equal to mass times acceleration, F = ma. The rate "
+                    "of change of momentum is proportional to force.\n\n2. F = ma = 2 × 3 = 6 N\n\n"
+                    "3. Inertia means body want to stay in same state. When bus stops sudenly we fall forward.",
     }
 
 
@@ -89,9 +120,40 @@ def _run(job_id, qp_bytes, qp_name, key_text, key_file, files, opts):
         _set(job_id, status="error", error=str(e))
 
 
+def _job(job_id):
+    if job_id not in jobs:
+        raise HTTPException(404, "batch not found")
+    return jobs[job_id]
+
+
+def _final(script):
+    """Marks after teacher review, falling back to the AI's."""
+    r = script.get("result")
+    if not r:
+        return None
+    rv = script.get("review") or {}
+    marks = [q.get("awarded") for q in rv.get("questions", [])]
+    total = sum(m if m is not None else q["awarded"]
+                for q, m in zip(r["questions"], marks + [None] * len(r["questions"])))
+    pct = round(100 * total / r["total_max"], 1) if r["total_max"] else 0.0
+    return {"total": total, "max": r["total_max"], "percentage": pct, "grade": _letter(pct)}
+
+
+# ---------- API ----------
+
 @app.get("/api/config")
 def config():
     return {"languages": LANGUAGES, "voices": VOICES, "demo": DEMO}
+
+
+@app.get("/api/jobs")
+def list_jobs():
+    with lock:
+        out = [{"id": j["id"], "name": j.get("name"), "created": j["created"], "status": j["status"],
+                "scripts": len(j["scripts"]),
+                "approved": sum(1 for s in j["scripts"] if (s.get("review") or {}).get("approved"))}
+               for j in jobs.values()]
+    return sorted(out, key=lambda j: -j["created"])[:20]
 
 
 @app.post("/api/jobs")
@@ -108,15 +170,24 @@ async def create_job(
         raise HTTPException(400, "unknown language")
     if reasoning_effort not in ("low", "medium", "high"):
         raise HTTPException(400, "reasoning_effort must be low, medium or high")
-    files = [(f.filename, await f.read()) for f in scripts]
+    files = [(Path(f.filename).name, await f.read()) for f in scripts]
     key_file = None
     if answer_key_file and answer_key_file.filename:
         if Path(answer_key_file.filename).suffix.lower() not in (".pdf", ".png", ".jpg", ".jpeg"):
             raise HTTPException(400, "answer key file must be PDF, PNG or JPG")
         key_file = (answer_key_file.filename, await answer_key_file.read())
+
     job_id = uuid.uuid4().hex[:10]
-    jobs[job_id] = {"id": job_id, "status": "queued", "created": time.time(),
-                    "scripts": [{"file": n, "stage": "queued"} for n, _ in files]}
+    up = DATA / job_id / "files"
+    up.mkdir(parents=True, exist_ok=True)
+    for i, (name, data) in enumerate(files):
+        (up / f"{i}{Path(name).suffix.lower()}").write_bytes(data)
+
+    with lock:
+        jobs[job_id] = {"id": job_id, "name": Path(question_paper.filename).stem, "status": "queued",
+                        "created": time.time(), "feedback_language": feedback_language,
+                        "scripts": [{"file": n, "stage": "queued"} for n, _ in files]}
+        _save(job_id)
     opts = dict(language=language, feedback_language=feedback_language,
                 reasoning_effort=reasoning_effort)
     threading.Thread(target=_run, daemon=True,
@@ -127,10 +198,49 @@ async def create_job(
 
 @app.get("/api/jobs/{job_id}")
 def get_job(job_id: str):
-    if job_id not in jobs:
-        raise HTTPException(404, "job not found")
     with lock:
-        return jobs[job_id]
+        return _job(job_id)
+
+
+@app.get("/api/jobs/{job_id}/scripts/{idx}/file")
+def script_file(job_id: str, idx: int):
+    job = _job(job_id)
+    if not 0 <= idx < len(job["scripts"]):
+        raise HTTPException(404, "script not found")
+    ext = Path(job["scripts"][idx]["file"]).suffix.lower()
+    path = DATA / job_id / "files" / f"{idx}{ext}"
+    if not path.exists():
+        raise HTTPException(404, "original file not kept for this batch")
+    return FileResponse(path, media_type=MIME.get(ext, "application/octet-stream"),
+                        headers={"Content-Disposition": "inline"})
+
+
+class QuestionReview(BaseModel):
+    awarded: float | None = Field(None, ge=0)
+    feedback: str | None = None
+
+
+class Review(BaseModel):
+    questions: list[QuestionReview] = []
+    overall_feedback: str | None = None
+    approved: bool = False
+
+
+@app.put("/api/jobs/{job_id}/scripts/{idx}/review")
+def save_review(job_id: str, idx: int, review: Review):
+    with lock:
+        job = _job(job_id)
+        if not 0 <= idx < len(job["scripts"]) or not job["scripts"][idx].get("result"):
+            raise HTTPException(404, "no marked script at that position")
+        qs = job["scripts"][idx]["result"]["questions"]
+        if len(review.questions) > len(qs):
+            raise HTTPException(400, "more questions than the script has")
+        for q, rq in zip(qs, review.questions):
+            if rq.awarded is not None and rq.awarded > q["max_marks"]:
+                raise HTTPException(400, f"Q{q.get('number')}: marks exceed {q['max_marks']:g}")
+        job["scripts"][idx]["review"] = {**review.model_dump(), "updated": time.time()}
+        _save(job_id)
+        return job["scripts"][idx]
 
 
 @app.get("/api/jobs/{job_id}/csv")
@@ -138,11 +248,14 @@ def job_csv(job_id: str):
     job = get_job(job_id)
     buf = io.StringIO()
     w = csv.writer(buf)
-    w.writerow(["file", "student_name", "total_awarded", "total_max", "percentage", "grade", "error"])
+    w.writerow(["file", "student_name", "ai_marks", "final_marks", "max_marks", "percentage",
+                "grade", "status", "error"])
     for s in job["scripts"]:
-        r = s.get("result") or {}
-        w.writerow([s["file"], r.get("student_name"), r.get("total_awarded"), r.get("total_max"),
-                    r.get("percentage"), r.get("grade"), s.get("error")])
+        r, f = s.get("result") or {}, _final(s) or {}
+        status = "approved" if (s.get("review") or {}).get("approved") else \
+                 "ai_marked" if r else s.get("stage")
+        w.writerow([s["file"], r.get("student_name"), r.get("total_awarded"), f.get("total"),
+                    f.get("max"), f.get("percentage"), f.get("grade"), status, s.get("error")])
     return StreamingResponse(iter([buf.getvalue()]), media_type="text/csv",
                              headers={"Content-Disposition": f"attachment; filename=marks-{job_id}.csv"})
 
