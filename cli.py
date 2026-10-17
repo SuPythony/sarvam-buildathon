@@ -1,7 +1,7 @@
 """Batch-grade handwritten assignments.
 
 Usage:
-  python cli.py --questions qp.pdf --submissions scans/ [--key key.txt] [--effort high]
+  python cli.py --questions qp.pdf --submissions scans/ [--model openai/gpt-6.1-sol] [--key key.txt] [--effort high]
 """
 import argparse
 import csv
@@ -16,6 +16,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--questions", required=True, help="question paper PDF (with marks)")
     p.add_argument("--submissions", required=True, help="file or folder of student scans")
+    p.add_argument("--model", help="OpenRouter model id (default: OPENROUTER_MODEL)")
     p.add_argument("--effort", default="medium", choices=["low", "medium", "high"])
     p.add_argument("--feedback-language", default="en-IN")
     p.add_argument("--key", help="optional answer key / rubric (txt or pdf)")
@@ -40,7 +41,7 @@ def main():
     for f in files:
         try:
             r = grade_submission(questions, f.read_bytes(), f.name, answer_key, a.language,
-                                 a.feedback_language, a.effort)
+                                 a.feedback_language, a.effort, a.model)
         except Exception as e:  # keep batch going
             print(f"[{f.name}] FAILED: {e}")
             rows.append({"file": f.name, "error": str(e)})

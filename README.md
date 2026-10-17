@@ -1,13 +1,13 @@
 # Red Pen — handwritten assignment marking
 
-Sarvam Vision reads handwritten scripts → Sarvam-105B marks them against the question paper →
+Sarvam Vision reads handwritten scripts → an LLM of your choice (via OpenRouter) marks them against the question paper →
 optional Bulbul v4 Flash narrates the feedback.
 
 ## Run
 
 ```
 pip install -r requirements.txt
-copy .env.example .env        # set SARVAM_API_KEY
+copy .env.example .env        # set SARVAM_API_KEY and OPENROUTER_API_KEY
 python server.py              # http://127.0.0.1:8000
 ```
 

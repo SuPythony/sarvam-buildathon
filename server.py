@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 
 import grader  # noqa: F401  (loads .env)
 from grader.pipeline import grade_submission, question_text
-from grader.sarvam_llm import LANGUAGES, _letter
+from grader.llm_grader import DEFAULT_MODEL, LANGUAGES, SUGGESTED, _letter, available_models
 from grader.sarvam_ocr import MIME
 from grader.tts import VOICES, narrate
 
@@ -108,6 +108,7 @@ def _run(job_id, qp_bytes, qp_name, key_text, key_file, files, opts):
                 else:
                     res = grade_submission(questions, data, name, key_text, opts["language"],
                                            opts["feedback_language"], opts["reasoning_effort"],
+                                           opts["model"],
                                            log=lambda m: None,
                                            on_stage=lambda s: _set(job_id, idx, stage=s))
                 _set(job_id, idx, stage="done", result=res)
@@ -143,7 +144,13 @@ def _final(script):
 
 @app.get("/api/config")
 def config():
-    return {"languages": LANGUAGES, "voices": VOICES, "demo": DEMO}
+    return {"languages": LANGUAGES, "voices": VOICES, "demo": DEMO,
+            "default_model": DEFAULT_MODEL, "suggested_models": SUGGESTED}
+
+
+@app.get("/api/models")
+def models():
+    return available_models()
 
 
 @app.get("/api/jobs")
@@ -165,11 +172,19 @@ async def create_job(
     language: str = Form("en-IN"),
     feedback_language: str = Form("en-IN"),
     reasoning_effort: str = Form("medium"),
+    model: str = Form(""),
 ):
     if language not in LANGUAGES or feedback_language not in LANGUAGES:
         raise HTTPException(400, "unknown language")
     if reasoning_effort not in ("low", "medium", "high"):
         raise HTTPException(400, "reasoning_effort must be low, medium or high")
+    model = model.strip() or DEFAULT_MODEL
+    # Fail before OCR spends credits.
+    if not DEMO:
+        if not os.environ.get("OPENROUTER_API_KEY"):
+            raise HTTPException(400, "OPENROUTER_API_KEY is missing. Add it to .env and restart the server.")
+        if model not in available_models():
+            raise HTTPException(400, f"OpenRouter has no model called '{model}'. Pick one from the list.")
     files = [(Path(f.filename).name, await f.read()) for f in scripts]
     key_file = None
     if answer_key_file and answer_key_file.filename:
@@ -185,11 +200,11 @@ async def create_job(
 
     with lock:
         jobs[job_id] = {"id": job_id, "name": Path(question_paper.filename).stem, "status": "queued",
-                        "created": time.time(), "feedback_language": feedback_language,
+                        "created": time.time(), "feedback_language": feedback_language, "model": model,
                         "scripts": [{"file": n, "stage": "queued"} for n, _ in files]}
         _save(job_id)
     opts = dict(language=language, feedback_language=feedback_language,
-                reasoning_effort=reasoning_effort)
+                reasoning_effort=reasoning_effort, model=model)
     threading.Thread(target=_run, daemon=True,
                      args=(job_id, await question_paper.read(), question_paper.filename,
                            answer_key.strip() or None, key_file, files, opts)).start()

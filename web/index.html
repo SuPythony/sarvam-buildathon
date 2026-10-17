@@ -16,7 +16,7 @@
       <span class="wordmark">Red Pen</span>
       <svg class="wordmark-underline" viewBox="0 0 120 10" aria-hidden="true"><path d="M2 7 C 30 2, 70 2, 118 6"/></svg>
     </div>
-    <p class="tagline">Handwriting read by Sarvam Vision. Marked by Sarvam‑105B.</p>
+    <p class="tagline">Handwriting read by Sarvam Vision. Marked by any model on OpenRouter.</p>
     <span id="demo-badge" class="demo-badge" hidden>Demo data</span>
   </header>
 
@@ -65,6 +65,13 @@
           <select id="feedback-language"></select>
         </label>
       </div>
+
+      <label class="field">
+        <span class="label">Marking model <em>OpenRouter</em></span>
+        <input id="model" type="text" list="model-list" spellcheck="false" autocapitalize="off">
+        <datalist id="model-list"></datalist>
+        <span class="hint">Any OpenRouter model id, e.g. openai/gpt-6.1-sol</span>
+      </label>
 
       <fieldset class="field">
         <legend class="label">Marking depth</legend>

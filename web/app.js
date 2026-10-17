@@ -42,6 +42,7 @@ async function init() {
   for (const sel of ["#language", "#feedback-language"]) {
     $(sel).innerHTML = Object.entries(state.config.languages).map(([c, n]) => `<option value="${c}">${n}</option>`).join("");
   }
+  setupModels();
   $("#feedback-language").addEventListener("change", fillVoices);
   $("#narrate").addEventListener("change", fillVoices);
   fillVoices();
@@ -88,6 +89,21 @@ function openJob(job) {
   if (!["done", "error"].includes(job.status)) poll();
 }
 
+function setupModels() {
+  const input = $("#model");
+  let saved = null;
+  try { saved = localStorage.getItem("redpen.model"); } catch {}
+  input.value = saved || state.config.default_model;
+  input.addEventListener("change", () => { try { localStorage.setItem("redpen.model", input.value.trim()); } catch {} });
+  const fill = (ids) => { $("#model-list").innerHTML = ids.map((m) => `<option value="${esc(m)}"></option>`).join(""); };
+  fill(state.config.suggested_models);
+  // Full catalogue loads in the background; suggestions first so the common picks lead.
+  fetch("/api/models").then((r) => r.json()).then((all) => {
+    const top = state.config.suggested_models;
+    fill([...top, ...all.filter((m) => !top.includes(m))]);
+  }).catch(() => {});
+}
+
 function fillVoices() {
   const on = $("#narrate").checked;
   const lang = $("#feedback-language").value;
@@ -132,6 +148,7 @@ async function submit(ev) {
   fd.append("language", $("#language").value);
   fd.append("feedback_language", $("#feedback-language").value);
   fd.append("reasoning_effort", document.querySelector("input[name=effort]:checked").value);
+  fd.append("model", $("#model").value.trim());
 
   $("#go").disabled = true;
   $("#go").textContent = "Marking…";
@@ -300,7 +317,7 @@ function markedView(s) {
 
   return `<div class="paper ${ed ? "is-editing" : ""}">
     <div class="sheet-head">
-      <div><h2>${esc(e.student_name || "Unnamed student")}</h2><small>${esc(s.file)}</small></div>
+      <div><h2>${esc(e.student_name || "Unnamed student")}</h2><small>${esc(s.file)} · marked by ${esc(e.model || state.job.model)}</small></div>
       <div class="total ${firstDraw ? "draw" : ""}" aria-label="Total ${num(e.total)} of ${num(e.total_max)}, grade ${esc(e.grade)}">
         ${CIRCLE}<div class="num"><span><span id="circle-total">${num(e.total)}</span>/${num(e.total_max)}</span><small id="circle-grade">${esc(e.grade)} · ${e.pct}%</small></div>
         ${e.approved && !ed ? '<span class="stamp">Checked</span>' : ""}

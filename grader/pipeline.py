@@ -4,7 +4,7 @@ from pathlib import Path
 
 from pypdf import PdfReader
 
-from .sarvam_llm import grade
+from .llm_grader import grade
 from .sarvam_ocr import digitise
 
 
@@ -20,14 +20,15 @@ def question_text(data: bytes, filename: str, language: str = "en-IN", log=print
 
 def grade_submission(questions: str, data: bytes, filename: str, answer_key: str | None = None,
                      language: str = "en-IN", feedback_language: str = "en-IN",
-                     reasoning_effort: str = "medium", log=print, on_stage=None) -> dict:
+                     reasoning_effort: str = "medium", model: str | None = None,
+                     log=print, on_stage=None) -> dict:
     on_stage = on_stage or (lambda s: None)
     on_stage("reading")
     log(f"[{filename}] OCR via Sarvam Vision")
     answers = digitise(data, filename, language, log=log)
     on_stage("marking")
-    log(f"[{filename}] grading via Sarvam-105B")
-    result = grade(questions, answers, answer_key, feedback_language, reasoning_effort)
+    log(f"[{filename}] grading via {model or 'default model'}")
+    result = grade(questions, answers, answer_key, feedback_language, reasoning_effort, model)
     result["file"] = Path(filename).name
     result["ocr_text"] = answers
     return result
