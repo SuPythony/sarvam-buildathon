@@ -108,7 +108,15 @@
           <svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="44"/></svg>
           <span>?/?</span>
         </div>
-        <p>Marked scripts land here.<br>Add the question paper and at least one script, then mark.</p>
+        <p id="empty-text">Marked scripts land here.<br>Add the question paper and at least one script, then mark.</p>
+        <div id="demo-intro" class="demo-intro" hidden>
+          <h3>This is a demo</h3>
+          <p>It runs on two sample scripts from a Class 9 physics test, marked earlier by DeepSeek V4.1 Flash. No AI calls are made here.</p>
+          <div class="demo-actions">
+            <a class="primary" href="#batch=sample">Open the marked sample batch</a>
+            <button type="button" class="secondary" id="use-samples">Fill the form with sample files</button>
+          </div>
+        </div>
         <nav id="recent" class="recent" hidden aria-label="Earlier batches">
           <h3>Earlier batches</h3>
           <ul id="recent-list"></ul>

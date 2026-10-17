@@ -111,32 +111,40 @@ def _set(job_id, idx=None, **kw):
         _save(job_id)
 
 
+# ---------- demo mode: pre-marked sample scripts, no API calls ----------
+SAMPLES = WEB / "samples"
+SAMPLE_DATA = json.loads((SAMPLES / "samples.json").read_text(encoding="utf-8"))
+
+
 def _demo_result(name):
     time.sleep(1.5)
-    return {
-        "file": name, "student_name": "Aarav Sharma", "model": "demo",
-        "questions": [
-            {"number": "1", "question": "State Newton's second law of motion.", "max_marks": 5,
-             "awarded": 4, "student_answer": "Force is equal to mass times acceleration, F = ma. "
-             "The rate of change of momentum is proportional to force.",
-             "feedback": "Correct statement. Mention direction of force and acceleration for full marks."},
-            {"number": "2", "question": "A 2 kg body accelerates at 3 m/s². Find the force.",
-             "max_marks": 5, "awarded": 5, "student_answer": "F = ma = 2 × 3 = 6 N",
-             "feedback": "Perfect. Units are right."},
-            {"number": "3", "question": "Explain inertia with one everyday example.", "max_marks": 10,
-             "awarded": 6, "student_answer": "Inertia means body want to stay in same state. When bus "
-             "stops sudenly we fall forward.",
-             "feedback": "Good example. Definition is incomplete: inertia is resistance to change in "
-             "state of rest or uniform motion."},
-        ],
-        "total_awarded": 15, "total_max": 20, "percentage": 75.0, "grade": "B",
-        "overall_feedback": "Solid grasp of the laws of motion. Work on writing complete definitions.",
-        "narration": "You scored fifteen out of twenty. Your numerical answer was perfect. "
-                     "Next time, write the full definition of inertia.",
-        "ocr_text": "Name: Aarav Sharma\n\n1. Force is equal to mass times acceleration, F = ma. The rate "
-                    "of change of momentum is proportional to force.\n\n2. F = ma = 2 × 3 = 6 N\n\n"
-                    "3. Inertia means body want to stay in same state. When bus stops sudenly we fall forward.",
-    }
+    if name not in SAMPLE_DATA["scripts"]:
+        raise RuntimeError("The demo only marks the sample scripts. Run Red Pen with your own "
+                           "Sarvam and OpenRouter keys to mark other files.")
+    return SAMPLE_DATA["scripts"][name]
+
+
+def _seed_demo():
+    """Pre-marked sample batch, so the demo has something to open straight away."""
+    job_id = "sample"
+    if job_id in jobs:
+        return
+    files = list(SAMPLE_DATA["scripts"])
+    up = DATA / job_id / "files"
+    up.mkdir(parents=True, exist_ok=True)
+    for i, name in enumerate(files):
+        (up / f"{i}{Path(name).suffix}").write_bytes((SAMPLES / name).read_bytes())
+    with lock:
+        jobs[job_id] = {"id": job_id, "name": SAMPLE_DATA["batch_name"], "status": "done",
+                        "created": time.time(), "feedback_language": "en-IN",
+                        "model": "deepseek/deepseek-v4.1-flash",
+                        "scripts": [{"file": n, "stage": "done", "result": SAMPLE_DATA["scripts"][n]}
+                                    for n in files]}
+        _save(job_id)
+
+
+if DEMO:
+    _seed_demo()
 
 
 def _run(job_id, qp_bytes, qp_name, key_text, key_file, files, opts):
@@ -194,6 +202,8 @@ def _final(script):
 @app.get("/api/config")
 def config():
     return {"languages": LANGUAGES, "voices": VOICES, "demo": DEMO, "auth": bool(APP_PASSWORD),
+            "samples": {k: SAMPLE_DATA[k] for k in ("question_paper", "answer_key")} | {
+                "scripts": list(SAMPLE_DATA["scripts"])} if DEMO else None,
             "default_model": DEFAULT_MODEL, "suggested_models": SUGGESTED}
 
 

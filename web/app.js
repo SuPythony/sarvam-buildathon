@@ -40,6 +40,7 @@ async function init() {
   state.config = await (await fetch("/api/config")).json();
   $("#demo-badge").hidden = !state.config.demo;
   $("#signout").hidden = !state.config.auth;
+  if (state.config.demo) setupDemo();
   for (const sel of ["#language", "#feedback-language"]) {
     $(sel).innerHTML = Object.entries(state.config.languages).map(([c, n]) => `<option value="${c}">${n}</option>`).join("");
   }
@@ -88,6 +89,34 @@ function openJob(job) {
   $("#csv").href = `/api/jobs/${job.id}/csv`;
   render();
   if (!["done", "error"].includes(job.status)) poll();
+}
+
+function setupDemo() {
+  $("#demo-intro").hidden = false;
+  $("#empty-text").hidden = true;
+  // Narration needs a live Sarvam key, which the demo doesn't have.
+  $("#narrate").disabled = true;
+  $("#narrate").closest(".narration").insertAdjacentHTML("beforeend", '<p class="hint">Narration is off in the demo.</p>');
+  $("#use-samples").addEventListener("click", fillSamples);
+}
+
+async function fillSamples() {
+  const s = state.config.samples;
+  const load = async (name) => {
+    const blob = await (await fetch(`/static/samples/${name}`)).blob();
+    return new File([blob], name, { type: blob.type });
+  };
+  const put = (id, files) => {
+    const dt = new DataTransfer();
+    files.forEach((f) => dt.items.add(f));
+    $("#" + id).files = dt.files;
+    $("#" + id).dispatchEvent(new Event("change"));
+  };
+  put("qp", [await load(s.question_paper)]);
+  put("scripts", await Promise.all(s.scripts.map(load)));
+  $("#answer-key").value = s.answer_key;
+  $("#go").focus();
+  $("#go").scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 function setupModels() {

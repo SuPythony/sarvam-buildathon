@@ -1,0 +1,83 @@
+{
+ "batch_name": "Class 9 Physics — sample batch",
+ "question_paper": "question-paper.png",
+ "answer_key": "Q1: F = ma; full marks ONLY if student states force is proportional to rate of change of momentum. F = ma alone: 2 marks.\nQ2: F = 6 N. Correct method, wrong arithmetic: 2 marks.\nQ3: Definition (5) + valid example (5).",
+ "scripts": {
+  "meera-iyer.png": {
+   "student_name": "Meera Iyer",
+   "questions": [
+    {
+     "number": "Q1",
+     "question": "State Newton's second law of motion.",
+     "max_marks": 5.0,
+     "awarded": 2.0,
+     "student_answer": "Force is equal to mass into acceleration. F = ma",
+     "feedback": "You have correctly written the mathematical form F = ma, which is the heart of the law, and that earns you two marks. However, the full statement of Newton's second law requires you to say that the net force is proportional to the rate of change of momentum (F = dp/dt, or F ∝ (mv - mu)/t). Because you gave only the formula and not the verbal statement about momentum, you lose three marks here. Next time, write the law in words first and then the equation."
+    },
+    {
+     "number": "Q2",
+     "question": "A 2 kg body accelerates at 3 m/s². Find the net force.",
+     "max_marks": 5.0,
+     "awarded": 2.0,
+     "student_answer": "F = m × a = 2 × 3 = 5 N",
+     "feedback": "Your method is exactly right: you correctly identified F = ma and substituted m = 2 kg and a = 3 m/s². Unfortunately, 2 × 3 equals 6, not 5, so the final answer is wrong. Per the rubric, correct method with wrong arithmetic earns two marks. Please double-check your multiplication in the exam; this is an easy mark to recover."
+    },
+    {
+     "number": "Q3",
+     "question": "Explain inertia with one everyday example.",
+     "max_marks": 10.0,
+     "awarded": 10.0,
+     "student_answer": "Inertia is the tendency of a body to resist change in its state of rest or motion. Eg: when a bus suddenly brakes, passengers fall forward.",
+     "feedback": "Excellent answer. Your definition captures the key idea that inertia is the tendency of a body to resist any change in its state of rest or of uniform motion, which is worth the full five marks. Your example of passengers falling forward when a bus brakes suddenly is a classic and correct illustration of inertia of motion, earning the remaining five marks. Well done."
+    }
+   ],
+   "overall_feedback": "Meera, you have a solid grasp of the core ideas in this unit, and your answer on inertia was perfect. Your main weakness is precision: in Q1 you gave only the formula F = ma without stating that force is proportional to the rate of change of momentum, and in Q2 you set up the calculation correctly but made a simple arithmetic slip (2 × 3 = 6, not 5). Both are easy fixes. Practise writing full law statements in words before the equation, and slow down on the final arithmetic step. Keep up the good work.",
+   "narration": "Meera, you scored fourteen out of twenty. Your strongest answer was the third question on inertia, where you gave a complete definition and a perfect everyday example for full marks. The two things to fix are stating Newton's second law in words about momentum, not just the formula, and checking your arithmetic, since two times three is six, not five. With those small corrections you will easily reach full marks next time.",
+   "total_awarded": 14.0,
+   "total_max": 20.0,
+   "percentage": 70.0,
+   "grade": "B",
+   "model": "deepseek/deepseek-v4.1-flash",
+   "file": "meera-iyer.png",
+   "ocr_text": "Name: Meera Iyer\n\nAns 1. Force is equal to mass into acceleration. $F = ma$\n\nAns 2. $F = m \\times a = 2 \\times 3$\n$= 5 N$\n\nAns 3. Inertia is the tendency of a body to resist change in its state of rest or motion. Eg: when a bus suddenly brakes, passengers fall forward."
+  },
+  "aarav-sharma.png": {
+   "student_name": "Aarav Sharma",
+   "questions": [
+    {
+     "number": "Q1",
+     "question": "State Newton's second law of motion.",
+     "max_marks": 5.0,
+     "awarded": 5.0,
+     "student_answer": "Newton's 2nd law: The rate of change of momentum of a body is proportional to the force applied. F = ma",
+     "feedback": "Complete answer. You stated the law in words, in terms of the rate of change of momentum, and then gave the equation F = ma. Full marks."
+    },
+    {
+     "number": "Q2",
+     "question": "A 2 kg body accelerates at 3 m/s². Find the net force.",
+     "max_marks": 5.0,
+     "awarded": 5.0,
+     "student_answer": "F = ma = 2 kg × 3 m/s² = 6 N",
+     "feedback": "Correct method, correct arithmetic and correct unit. Writing the units alongside the numbers was a good habit."
+    },
+    {
+     "number": "Q3",
+     "question": "Explain inertia with one everyday example.",
+     "max_marks": 10.0,
+     "awarded": 8.0,
+     "student_answer": "Inertia means a body wants to stay in same state. When bus starts suddenly we fall backwards.",
+     "feedback": "Your example is correct: passengers fall backwards because their bodies resist the change from rest to motion, which earns the full five marks for the example. The definition is too loose for full credit. Inertia is the tendency of a body to resist any change in its state of rest or of uniform motion; 'wants to stay in same state' misses both parts, so three of five marks for the definition."
+    }
+   ],
+   "overall_feedback": "Aarav, this is a strong paper. Your statement of Newton's second law was complete and your calculation was accurate, with units throughout. The one area to tighten is definitions: say exactly what inertia resists, a change in rest or in uniform motion, rather than describing it loosely. Keep writing laws in words first, as you did in Q1.",
+   "narration": "Aarav, you scored eighteen out of twenty. Your best answer was the second law of motion, which you stated fully in terms of momentum. Your calculation was also perfect. To reach full marks, make your definition of inertia precise: it is the tendency of a body to resist any change in its state of rest or uniform motion.",
+   "total_awarded": 18.0,
+   "total_max": 20.0,
+   "percentage": 90.0,
+   "grade": "A+",
+   "model": "deepseek/deepseek-v4.1-flash",
+   "file": "aarav-sharma.png",
+   "ocr_text": "Name: Aarav Sharma\n\n1) Newton's 2nd law: The rate of change of momentum of a body is proportional to the force applied. F = ma\n\n2) F = ma\n= 2 kg x 3 m/s2 = 6 N\n\n3) Inertia means a body wants to stay in same state. When bus starts suddenly we fall backwards."
+  }
+ }
+}
