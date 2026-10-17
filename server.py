@@ -58,8 +58,9 @@ def login(request: Request, password: str = Form("")):
         return RedirectResponse("/login?wrong=1", status_code=303)
     res = RedirectResponse("/", status_code=303)
     https = request.headers.get("x-forwarded-proto", request.url.scheme) == "https"
+    # Over HTTPS allow cross-site use: Hugging Face shows the app inside an iframe.
     res.set_cookie("redpen_session", SESSION, max_age=30 * 86400, httponly=True,
-                   samesite="lax", secure=https)
+                   samesite="none" if https else "lax", secure=https, partitioned=https)
     return res
 
 
@@ -67,6 +68,7 @@ def login(request: Request, password: str = Form("")):
 def logout():
     res = RedirectResponse("/login", status_code=303)
     res.delete_cookie("redpen_session")
+    res.delete_cookie("redpen_session", secure=True, samesite="none", partitioned=True)
     return res
 
 
