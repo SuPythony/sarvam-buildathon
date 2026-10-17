@@ -26,9 +26,14 @@ read it, and the original scan. **Review marks** lets the teacher change any mar
 (the AI's mark stays visible beside it), then save a draft or approve. The CSV lists AI marks
 and final marks side by side. Batches and reviews are saved under `data/` and survive restarts.
 
-## Deploy (Railway)
+## Deploy
 
-Dockerfile included. Create a service from this repo, attach a volume at `/data`, and set
+**Render (free):** New > Blueprint > this repo. It reads `render.yaml` and asks for
+`SARVAM_API_KEY`, `OPENROUTER_API_KEY` and `APP_PASSWORD`. The free plan sleeps after 15 min idle
+and keeps no disk, so download the CSV after reviewing.
+
+**Railway / any Docker host:** 
+Create a service from this repo, attach a volume at `/data`, and set
 `SARVAM_API_KEY`, `OPENROUTER_API_KEY`, `APP_PASSWORD` (teachers sign in with it) and optionally
 `OPENROUTER_MODEL`. Keep one replica: batch progress lives in process memory.
 

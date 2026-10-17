@@ -1,0 +1,19 @@
+# Render Blueprint: New > Blueprint > pick this repo. Free plan sleeps after 15 min idle and
+# has no persistent disk, so download marks (CSV) after reviewing a batch.
+services:
+  - type: web
+    name: red-pen
+    runtime: docker
+    plan: free
+    region: singapore
+    healthCheckPath: /healthz
+    autoDeployTrigger: commit
+    envVars:
+      - key: SARVAM_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: APP_PASSWORD
+        sync: false
+      - key: OPENROUTER_MODEL
+        value: deepseek/deepseek-v4.1-flash
