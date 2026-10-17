@@ -39,6 +39,7 @@ function effective(s) {
 async function init() {
   state.config = await (await fetch("/api/config")).json();
   $("#demo-badge").hidden = !state.config.demo;
+  $("#signout").hidden = !state.config.auth;
   for (const sel of ["#language", "#feedback-language"]) {
     $(sel).innerHTML = Object.entries(state.config.languages).map(([c, n]) => `<option value="${c}">${n}</option>`).join("");
   }

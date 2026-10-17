@@ -51,8 +51,9 @@ body {
 .wordmark-underline { position: absolute; left: 0; bottom: -8px; width: 100%; height: 10px; }
 .wordmark-underline path { fill: none; stroke: var(--pen); stroke-width: 2.2; stroke-linecap: round; }
 .tagline { margin: 0; color: var(--muted); font-size: 14px; }
+.topbar-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
 .demo-badge {
-  margin-left: auto; font: 500 12px var(--mono); color: var(--pen);
+  font: 500 12px var(--mono); color: var(--pen);
   border: 1px dashed var(--pen); padding: 2px 8px; border-radius: 99px;
 }
 
@@ -307,6 +308,20 @@ button, .secondary {
 
 .paper .waiting { display: grid; place-items: center; min-height: 380px; color: var(--muted); text-align: center; font-family: var(--hand); font-size: 22px; }
 .paper .err { color: var(--pen); font-family: var(--mono); font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* ---------- sign in ---------- */
+.login-page { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+.login {
+  width: min(360px, 100%); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 28px 24px; display: flex; flex-direction: column; gap: 18px;
+}
+.login .brand { align-self: center; margin-bottom: 8px; }
+.login input[type="password"] {
+  font: inherit; color: var(--text); background: var(--paper); border: 1px solid var(--line);
+  border-radius: 8px; padding: 10px 12px; width: 100%;
+}
+.signout { color: var(--muted); font-size: 13px; text-decoration: none; }
+.signout:hover { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }

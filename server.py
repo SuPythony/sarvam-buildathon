@@ -9,8 +9,10 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse, StreamingResponse
+import hmac
+
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -26,6 +28,51 @@ DEMO = os.environ.get("GRADER_DEMO") == "1"  # fake pipeline for UI work without
 
 app = FastAPI(title="Red Pen")
 pool = ThreadPoolExecutor(max_workers=3)
+
+# ---------- optional shared-password login (set APP_PASSWORD when deployed) ----------
+APP_PASSWORD = os.environ.get("APP_PASSWORD", "")
+SESSION = hmac.new(APP_PASSWORD.encode(), b"red-pen-session", "sha256").hexdigest() if APP_PASSWORD else ""
+PUBLIC = ("/login", "/api/login", "/healthz", "/static/styles.css")
+
+
+@app.middleware("http")
+async def require_login(request: Request, call_next):
+    path = request.url.path
+    if not APP_PASSWORD or path in PUBLIC or \
+            hmac.compare_digest(request.cookies.get("redpen_session", ""), SESSION):
+        return await call_next(request)
+    if path.startswith("/api/"):
+        return JSONResponse({"detail": "Sign in first."}, status_code=401)
+    return RedirectResponse("/login", status_code=303)
+
+
+@app.get("/login")
+def login_page():
+    return FileResponse(WEB / "login.html")
+
+
+@app.post("/api/login")
+def login(request: Request, password: str = Form("")):
+    if not APP_PASSWORD or not hmac.compare_digest(password.encode(), APP_PASSWORD.encode()):
+        time.sleep(1)  # slow down guessing
+        return RedirectResponse("/login?wrong=1", status_code=303)
+    res = RedirectResponse("/", status_code=303)
+    https = request.headers.get("x-forwarded-proto", request.url.scheme) == "https"
+    res.set_cookie("redpen_session", SESSION, max_age=30 * 86400, httponly=True,
+                   samesite="lax", secure=https)
+    return res
+
+
+@app.get("/logout")
+def logout():
+    res = RedirectResponse("/login", status_code=303)
+    res.delete_cookie("redpen_session")
+    return res
+
+
+@app.get("/healthz")
+def healthz():
+    return {"ok": True}
 jobs: dict[str, dict] = {}
 lock = threading.Lock()
 
@@ -144,7 +191,7 @@ def _final(script):
 
 @app.get("/api/config")
 def config():
-    return {"languages": LANGUAGES, "voices": VOICES, "demo": DEMO,
+    return {"languages": LANGUAGES, "voices": VOICES, "demo": DEMO, "auth": bool(APP_PASSWORD),
             "default_model": DEFAULT_MODEL, "suggested_models": SUGGESTED}
 
 
@@ -300,4 +347,4 @@ def index():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host=os.environ.get("HOST", "127.0.0.1"), port=int(os.environ.get("PORT", 8000)))

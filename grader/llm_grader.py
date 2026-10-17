@@ -8,9 +8,9 @@ import requests
 
 CHAT_URL = "https://openrouter.ai/api/v1/chat/completions"
 MODELS_URL = "https://openrouter.ai/api/v1/models"
-DEFAULT_MODEL = os.environ.get("OPENROUTER_MODEL", "anthropic/claude-sonnet-5.5")
-SUGGESTED = ["anthropic/claude-sonnet-5.5", "openai/gpt-6.1-sol", "google/gemini-3.8-flash",
-             "deepseek/deepseek-v4.1-flash", "qwen/qwen3.8-flash", "anthropic/claude-haiku-5.5"]
+DEFAULT_MODEL = os.environ.get("OPENROUTER_MODEL", "deepseek/deepseek-v4.1-flash")
+SUGGESTED = ["deepseek/deepseek-v4.1-flash", "qwen/qwen3.8-flash", "google/gemini-3.8-flash",
+             "anthropic/claude-sonnet-5.5", "openai/gpt-6.1-sol", "anthropic/claude-haiku-5.5"]
 
 LANGUAGES = {
     "en-IN": "English", "hi-IN": "Hindi", "bn-IN": "Bengali", "gu-IN": "Gujarati",
